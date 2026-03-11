@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#2563eb"/>
+  <g transform="translate(256,256)">
+    <!-- Main four-point sparkle -->
+    <path d="M0-140 L22-22 140 0 22 22 0 140-22 22-140 0-22-22Z" fill="white" opacity="0.95"/>
+    <!-- Small sparkle top-right -->
+    <path d="M85-108 L93-80 112-74 93-68 85-40 77-68 58-74 77-80Z" fill="white" opacity="0.7"/>
+    <!-- Small sparkle bottom-left -->
+    <path d="M-96 64 L-88 86 -70 92 -88 98 -96 120 -104 98 -122 92 -104 86Z" fill="white" opacity="0.5"/>
+  </g>
+</svg>
