@@ -40,10 +40,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { messages, userContext, modelId } = body as {
+    const { messages, userContext, modelId, designStyle } = body as {
       messages: UIMessage[];
       userContext?: UserContext;
       modelId?: string;
+      designStyle?: string;
     };
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
 
     const result = streamText({
       model: getModel(effectiveModelId),
-      system: buildSystemPrompt(userContext),
+      system: buildSystemPrompt(userContext, designStyle),
       messages: await convertToModelMessages(messages),
       tools,
     });

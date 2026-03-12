@@ -6,6 +6,7 @@ import { MessageList } from "./message-list";
 import { AgentMessageList } from "./agent-message-list";
 import { ChatInput, type ChatInputHandle } from "./chat-input";
 import { ModelSelector } from "./model-selector";
+import { StyleSelector, type DesignStyle } from "./style-selector";
 import { TemplateDrawer } from "./template-drawer";
 import { HistoryPanel } from "./history-panel";
 import { ShortcutsModal } from "@/components/shared/shortcuts-modal";
@@ -48,6 +49,10 @@ export function ChatContainer() {
   const modelRef = useRef(modelId);
   modelRef.current = modelId;
 
+  const [designStyle, setDesignStyle] = useState<DesignStyle>("auto");
+  const designStyleRef = useRef(designStyle);
+  designStyleRef.current = designStyle;
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -55,6 +60,7 @@ export function ChatContainer() {
         body: () => ({
           userContext: contextRef.current,
           modelId: modelRef.current,
+          designStyle: designStyleRef.current,
         }),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -431,6 +437,7 @@ export function ChatContainer() {
         <div className="flex items-center gap-2">
           <TemplateDrawer onSelect={handlePromptSend} />
           <ModelSelector selectedModelId={modelId} onModelChange={setModelId} />
+          <StyleSelector selectedStyle={designStyle} onStyleChange={setDesignStyle} />
           <HistoryPanel onReuse={handlePromptSend} />
         </div>
         <div className="flex items-center gap-2">

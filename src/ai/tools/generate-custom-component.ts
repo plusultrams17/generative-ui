@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const generateCustomComponent = tool({
   description:
-    "Generate a custom React component with JSX and Tailwind CSS. Use when the user asks for a component that doesn't fit other specific tools (forms, tables, charts). The code should define a function component named App.",
+    "Generate a React component with JSX and Tailwind CSS. Use this tool for ALL UI generation requests including forms, tables, charts, dashboards, landing pages, cards, and any other UI. Always produce visually rich, unique designs with creative layouts, colors, and styling. The code should define a function component named App.",
   inputSchema: z.object({
     title: z.string().describe("Component title/name"),
     description: z.string().describe("What this component does"),
