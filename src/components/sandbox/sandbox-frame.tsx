@@ -57,10 +57,8 @@ export function SandboxFrame({ code, onError, onLoad, maxWidth, themeTokens, ani
 <\/script>`
       : "";
 
-    // Escape user code: handle </script> tags and encode for safe embedding
-    const escapedCode = code
-      .replace(/<\/script>/gi, "<\\/script>")
-      .replace(/<script/gi, "<\\script");
+    // Encode user code as base64 to avoid all escaping issues
+    const base64Code = btoa(unescape(encodeURIComponent(code)));
 
     return `<!DOCTYPE html>
 <html>
@@ -71,7 +69,7 @@ export function SandboxFrame({ code, onError, onLoad, maxWidth, themeTokens, ani
   ${tailwindConfig}
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"><\/script>
   <style>
     body {
       margin: 0;
@@ -86,28 +84,51 @@ export function SandboxFrame({ code, onError, onLoad, maxWidth, themeTokens, ani
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel">
-    try {
-      ${escapedCode}
+  <script>
+    (function() {
+      try {
+        // Decode user code from base64
+        var userCode = decodeURIComponent(escape(atob("${base64Code}")));
 
-      const _root = ReactDOM.createRoot(document.getElementById('root'));
-      _root.render(React.createElement(typeof App !== 'undefined' ? App : function() { return React.createElement('div', null, 'Component loaded'); }));
-      window.parent.postMessage({ type: 'sandbox-loaded' }, '*');
+        // Compile JSX with Babel
+        var compiled = Babel.transform(userCode, {
+          presets: ['react']
+        }).code;
 
-      const _ro = new ResizeObserver(function() {
-        var h = document.documentElement.scrollHeight;
-        window.parent.postMessage({ type: 'sandbox-height', height: h }, '*');
-      });
-      _ro.observe(document.body);
-    } catch (error) {
-      document.getElementById('root').innerHTML =
-        '<div style="color:#ef4444;padding:12px;border:1px solid #fecaca;border-radius:8px;background:#fef2f2;font-size:14px;">' +
-        '<strong>レンダリングエラー</strong><br/>' + error.message + '</div>';
-      window.parent.postMessage(
-        { type: 'sandbox-error', error: error.message },
-        '*'
-      );
-    }
+        // Execute compiled code in global scope via script element
+        var scriptEl = document.createElement('script');
+        scriptEl.textContent = compiled;
+        document.body.appendChild(scriptEl);
+
+        // Find App component
+        var AppComponent = window.App;
+        if (typeof AppComponent === 'undefined') {
+          throw new Error('App component not found. Code must define: function App() { ... }');
+        }
+
+        // Render
+        var root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(AppComponent));
+
+        window.parent.postMessage({ type: 'sandbox-loaded' }, '*');
+
+        // Observe height changes
+        var ro = new ResizeObserver(function() {
+          var h = document.documentElement.scrollHeight;
+          window.parent.postMessage({ type: 'sandbox-height', height: h }, '*');
+        });
+        ro.observe(document.body);
+
+      } catch (error) {
+        document.getElementById('root').innerHTML =
+          '<div style="color:#ef4444;padding:12px;border:1px solid #fecaca;border-radius:8px;background:#fef2f2;font-size:14px;">' +
+          '<strong>レンダリングエラー</strong><br/>' + error.message + '</div>';
+        window.parent.postMessage(
+          { type: 'sandbox-error', error: error.message },
+          '*'
+        );
+      }
+    })();
   <\/script>
 </body>
 </html>`;
