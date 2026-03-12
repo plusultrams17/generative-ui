@@ -90,10 +90,18 @@ export function SandboxFrame({ code, onError, onLoad, maxWidth, themeTokens, ani
         // Decode user code from base64
         var userCode = decodeURIComponent(escape(atob("${base64Code}")));
 
+        // Strip export statements before compilation (not valid in non-module scripts)
+        userCode = userCode.replace(/export\\s+default\\s+/g, '');
+        userCode = userCode.replace(/export\\s+\\{[^}]*\\}\\s*;?/g, '');
+        userCode = userCode.replace(/export\\s+(?=function|class|const|let|var)/g, '');
+
         // Compile JSX with Babel
         var compiled = Babel.transform(userCode, {
           presets: ['react']
         }).code;
+
+        // Ensure App is on window regardless of const/let/function/var declaration
+        compiled += '\\n;if(typeof App!=="undefined"){window.App=App;}';
 
         // Execute compiled code in global scope via script element
         var scriptEl = document.createElement('script');
@@ -103,7 +111,7 @@ export function SandboxFrame({ code, onError, onLoad, maxWidth, themeTokens, ani
         // Find App component
         var AppComponent = window.App;
         if (typeof AppComponent === 'undefined') {
-          throw new Error('App component not found. Code must define: function App() { ... }');
+          throw new Error('App component not found. Make sure your code defines: function App() { ... }');
         }
 
         // Render
