@@ -69,13 +69,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!user) return;
 
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (data) {
+    if (!error && data) {
       set({ profile: data as Profile });
     }
   },

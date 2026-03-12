@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const redirect = searchParams.get("redirect") || "/chat";
+  const rawRedirect = searchParams.get("redirect") || "/chat";
+  // Ensure redirect is a relative path to prevent open redirect
+  const redirect = rawRedirect.startsWith("/") ? rawRedirect : "/chat";
 
   if (code) {
     const supabase = await createClient();
@@ -21,14 +23,14 @@ export async function GET(request: Request) {
           .from("profiles")
           .select("id")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         if (!profile) {
           await supabase.from("profiles").insert({
             id: user.id,
-            email: user.email!,
+            email: user.email || "",
             display_name:
-              user.user_metadata?.display_name || user.email?.split("@")[0],
+              user.user_metadata?.display_name || user.email?.split("@")[0] || "User",
           });
         }
       }

@@ -93,9 +93,9 @@ export default function PricingPage() {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
-      } else {
-        toast.error(data.error || "エラーが発生しました");
+        return;
       }
+      toast.error(data.error || "エラーが発生しました");
     } catch {
       toast.error("エラーが発生しました");
     }

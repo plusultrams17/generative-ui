@@ -15,14 +15,14 @@ const LIMITS = {
 export async function checkQuota(userId: string): Promise<QuotaResult> {
   const supabase = await createClient();
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("plan, generation_count_month, generation_reset_at")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  if (!profile) {
-    return { allowed: false, remaining: 0, limit: 0, plan: "free" };
+  if (error || !profile) {
+    return { allowed: true, remaining: 5, limit: 5, plan: "free" };
   }
 
   const plan = (profile.plan as "free" | "pro") || "free";
@@ -85,7 +85,7 @@ export async function incrementUsage(
   const supabase = await createClient();
 
   // Increment monthly counter
-  await supabase.rpc("increment_generation_count", { user_id: userId });
+  await supabase.rpc("increment_generation_count", { p_user_id: userId });
 
   // Log usage
   await supabase.from("usage_logs").insert({

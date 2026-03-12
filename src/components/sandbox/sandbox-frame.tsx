@@ -57,8 +57,10 @@ export function SandboxFrame({ code, onError, onLoad, maxWidth, themeTokens, ani
 <\/script>`
       : "";
 
-    // Escape user code for embedding in a script text content
-    const escapedCode = code.replace(/<\/script>/gi, "<\\/script>");
+    // Escape user code: handle </script> tags and encode for safe embedding
+    const escapedCode = code
+      .replace(/<\/script>/gi, "<\\/script>")
+      .replace(/<script/gi, "<\\script");
 
     return `<!DOCTYPE html>
 <html>
@@ -67,6 +69,9 @@ export function SandboxFrame({ code, onError, onLoad, maxWidth, themeTokens, ani
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"><\/script>
   ${tailwindConfig}
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
   <style>
     body {
       margin: 0;
@@ -81,54 +86,19 @@ export function SandboxFrame({ code, onError, onLoad, maxWidth, themeTokens, ani
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/plain" id="user-code">${escapedCode}<\/script>
-  <script type="module">
+  <script type="text/babel">
     try {
-      const [ReactModule, ReactDOMModule, BabelModule] = await Promise.all([
-        import('https://esm.sh/react@19?bundle'),
-        import('https://esm.sh/react-dom@19/client?bundle'),
-        import('https://esm.sh/@babel/standalone?bundle'),
-      ]);
+      ${escapedCode}
 
-      const React = ReactModule.default || ReactModule;
-      window.React = React;
-
-      // Expose common hooks as globals so user code can use React.useState etc.
-      Object.keys(ReactModule).forEach(key => {
-        if (key !== 'default' && key !== '__esModule') {
-          React[key] = React[key] || ReactModule[key];
-        }
-      });
-
-      const { createRoot } = ReactDOMModule;
-      window.ReactDOM = { createRoot };
-
-      const Babel = BabelModule.default || BabelModule;
-
-      // Get and compile user code
-      const userCode = document.getElementById('user-code').textContent;
-      const compiled = Babel.transform(userCode, {
-        presets: ['react'],
-        filename: 'component.jsx',
-      }).code;
-
-      // Execute user code to define App
-      const execFn = new Function(compiled);
-      execFn();
-
-      // Render
-      const root = createRoot(document.getElementById('root'));
-      root.render(React.createElement(window.App || App));
-
+      const _root = ReactDOM.createRoot(document.getElementById('root'));
+      _root.render(React.createElement(typeof App !== 'undefined' ? App : function() { return React.createElement('div', null, 'Component loaded'); }));
       window.parent.postMessage({ type: 'sandbox-loaded' }, '*');
 
-      // Observe height changes
-      const ro = new ResizeObserver(() => {
-        const h = document.documentElement.scrollHeight;
+      const _ro = new ResizeObserver(function() {
+        var h = document.documentElement.scrollHeight;
         window.parent.postMessage({ type: 'sandbox-height', height: h }, '*');
       });
-      ro.observe(document.body);
-
+      _ro.observe(document.body);
     } catch (error) {
       document.getElementById('root').innerHTML =
         '<div style="color:#ef4444;padding:12px;border:1px solid #fecaca;border-radius:8px;background:#fef2f2;font-size:14px;">' +

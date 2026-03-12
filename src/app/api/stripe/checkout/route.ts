@@ -26,13 +26,13 @@ export async function POST() {
       .from("profiles")
       .select("stripe_customer_id, email")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     let customerId = profile?.stripe_customer_id;
 
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: user.email!,
+        email: user.email || "",
         metadata: { supabase_user_id: user.id },
       });
       customerId = customer.id;

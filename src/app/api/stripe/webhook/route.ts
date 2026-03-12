@@ -18,7 +18,11 @@ function getAdminSupabase() {
 export async function POST(request: Request) {
   const stripe = getStripe();
   const body = await request.text();
-  const signature = request.headers.get("stripe-signature")!;
+  const signature = request.headers.get("stripe-signature");
+
+  if (!signature) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
 
   let event: Stripe.Event;
 
@@ -35,52 +39,95 @@ export async function POST(request: Request) {
 
   const supabase = getAdminSupabase();
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const userId = session.metadata?.supabase_user_id;
-      const subscriptionId = session.subscription as string;
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.metadata?.supabase_user_id;
+        const subscriptionId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : session.subscription?.id ?? null;
+        const customerId =
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer?.id ?? null;
 
-      if (userId) {
-        await supabase
-          .from("profiles")
-          .update({
-            plan: "pro",
-            stripe_subscription_id: subscriptionId,
-            stripe_customer_id: session.customer as string,
-          })
-          .eq("id", userId);
+        if (userId && subscriptionId) {
+          const { error } = await supabase
+            .from("profiles")
+            .update({
+              plan: "pro",
+              stripe_subscription_id: subscriptionId,
+              stripe_customer_id: customerId,
+            })
+            .eq("id", userId);
+
+          if (error) {
+            console.error("[webhook] Failed to update profile:", error);
+            return NextResponse.json(
+              { error: "Database update failed" },
+              { status: 500 }
+            );
+          }
+        } else {
+          console.warn("[webhook] checkout.session.completed missing userId or subscriptionId", {
+            userId,
+            subscriptionId,
+          });
+        }
+        break;
       }
-      break;
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId =
+          typeof subscription.customer === "string"
+            ? subscription.customer
+            : subscription.customer?.id ?? null;
+
+        if (customerId) {
+          const { error } = await supabase
+            .from("profiles")
+            .update({
+              plan: "free",
+              stripe_subscription_id: null,
+            })
+            .eq("stripe_customer_id", customerId);
+
+          if (error) {
+            console.error("[webhook] Failed to downgrade:", error);
+          }
+        }
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId =
+          typeof subscription.customer === "string"
+            ? subscription.customer
+            : subscription.customer?.id ?? null;
+        const isActive = ["active", "trialing"].includes(subscription.status);
+
+        if (customerId) {
+          const { error } = await supabase
+            .from("profiles")
+            .update({
+              plan: isActive ? "pro" : "free",
+            })
+            .eq("stripe_customer_id", customerId);
+
+          if (error) {
+            console.error("[webhook] Failed to update subscription:", error);
+          }
+        }
+        break;
+      }
     }
-
-    case "customer.subscription.deleted": {
-      const subscription = event.data.object as Stripe.Subscription;
-      const customerId = subscription.customer as string;
-
-      await supabase
-        .from("profiles")
-        .update({
-          plan: "free",
-          stripe_subscription_id: null,
-        })
-        .eq("stripe_customer_id", customerId);
-      break;
-    }
-
-    case "customer.subscription.updated": {
-      const subscription = event.data.object as Stripe.Subscription;
-      const customerId = subscription.customer as string;
-      const isActive = ["active", "trialing"].includes(subscription.status);
-
-      await supabase
-        .from("profiles")
-        .update({
-          plan: isActive ? "pro" : "free",
-        })
-        .eq("stripe_customer_id", customerId);
-      break;
-    }
+  } catch (err) {
+    console.error("[webhook] Unhandled error:", err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

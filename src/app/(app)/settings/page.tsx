@@ -218,8 +218,11 @@ export default function SettingsPage() {
                     try {
                       const res = await fetch("/api/stripe/checkout", { method: "POST" });
                       const data = await res.json();
-                      if (data.url) window.location.href = data.url;
-                    } catch { /* ignore */ }
+                      if (data.url) {
+                        window.location.href = data.url;
+                        return;
+                      }
+                    } catch { /* network error */ }
                     setPlanLoading(false);
                   }}
                 >
@@ -260,9 +263,11 @@ export default function SettingsPage() {
                 onClick={async () => {
                   try {
                     const res = await fetch("/api/stripe/portal", { method: "POST" });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
-                  } catch { /* ignore */ }
+                    if (res.ok) {
+                      const data = await res.json();
+                      if (data.url) window.location.href = data.url;
+                    }
+                  } catch { /* network error */ }
                 }}
               >
                 サブスクリプション管理（Stripe）
