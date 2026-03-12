@@ -6,11 +6,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, LayoutGrid, Trash2, RotateCcw, Layers, Star, Plus, X, Search } from "lucide-react";
+import { ArrowLeft, LayoutGrid, Trash2, RotateCcw, Layers, Star, Plus, X, Search, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TOOL_LABELS } from "@/lib/shared-constants";
+import { useShareStore } from "@/stores/share-store";
 
 const TOOL_COLORS: Record<string, string> = {
   showForm: "bg-blue-500",
@@ -116,6 +117,7 @@ export default function GalleryPage() {
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const isFavorite = useFavoritesStore((s) => s.isFavorite);
   const removeTag = useFavoritesStore((s) => s.removeTag);
+  const addShare = useShareStore((s) => s.addShare);
 
   const filtered = entries.filter((e) => {
     // Filter by tab
@@ -151,6 +153,13 @@ export default function GalleryPage() {
     const wasFavorite = isFavorite(entryId);
     toggleFavorite(entryId);
     toast.success(wasFavorite ? "お気に入りから削除しました" : "お気に入りに追加しました");
+  }
+
+  function handleShare(entry: HistoryEntry) {
+    const id = addShare(entry.toolName, entry.toolData);
+    const url = `${window.location.origin}/share/${id}`;
+    navigator.clipboard.writeText(url);
+    toast.success("共有リンクをコピーしました");
   }
 
   function handleTagClick(tag: string) {
@@ -324,7 +333,7 @@ export default function GalleryPage() {
                   </CardContent>
                   <CardFooter className="gap-2 border-t pb-3 pt-3">
                     <Link
-                      href={`/?prompt=${encodeURIComponent(entry.prompt)}`}
+                      href={`/chat?prompt=${encodeURIComponent(entry.prompt)}`}
                       className="flex-1"
                     >
                       <Button variant="outline" size="sm" className="w-full gap-1.5">
@@ -332,6 +341,15 @@ export default function GalleryPage() {
                         再利用
                       </Button>
                     </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-primary"
+                      onClick={() => handleShare(entry)}
+                      title="共有リンクを作成"
+                    >
+                      <Share2 className="h-3 w-3" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"

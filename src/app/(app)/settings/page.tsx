@@ -50,6 +50,8 @@ import { AVAILABLE_MODELS } from "@/lib/models";
 import { useAgentStore, type AgentEndpoint } from "@/stores/agent-store";
 import { useSupabaseStore } from "@/stores/supabase-store";
 import { useMCPStore, type MCPServer } from "@/stores/mcp-store";
+import { useAuthStore } from "@/stores/auth-store";
+import { Crown } from "lucide-react";
 
 function maskToken(token: string): string {
   if (!token) return "";
@@ -77,6 +79,9 @@ export default function SettingsPage() {
   const versions = useVersionStore((s) => s.versions);
   const supabaseConfig = useSupabaseStore((s) => s.config);
   const setSupabaseConfig = useSupabaseStore((s) => s.setConfig);
+  const profile = useAuthStore((s) => s.profile);
+  const isPro = profile?.plan === "pro";
+  const [planLoading, setPlanLoading] = useState(false);
 
   // --- Token editing state ---
   const [editingVercel, setEditingVercel] = useState(false);
@@ -175,6 +180,97 @@ export default function SettingsPage() {
       </header>
 
       <main className="mx-auto max-w-2xl space-y-6 px-4 py-6">
+        {/* ===== Section 0: Plan Management ===== */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-4 w-4" />
+              プラン管理
+            </CardTitle>
+            <CardDescription>
+              現在のプランと利用状況を確認できます
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <p className="text-sm font-medium">現在のプラン</p>
+                <div className="mt-1 flex items-center gap-2">
+                  {isPro ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-xs font-bold text-white">
+                      <Crown className="h-3 w-3" />
+                      Pro
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs font-medium">
+                      Free
+                    </span>
+                  )}
+                </div>
+              </div>
+              {!isPro && (
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={planLoading}
+                  onClick={async () => {
+                    setPlanLoading(true);
+                    try {
+                      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+                      const data = await res.json();
+                      if (data.url) window.location.href = data.url;
+                    } catch { /* ignore */ }
+                    setPlanLoading(false);
+                  }}
+                >
+                  {planLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Crown className="h-3.5 w-3.5" />
+                  )}
+                  アップグレード
+                </Button>
+              )}
+            </div>
+
+            {profile && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">今月の生成回数</span>
+                  <span className="font-medium">
+                    {profile.generation_count_month} / {isPro ? 300 : 30}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-muted">
+                  <div
+                    className="h-2 rounded-full bg-primary transition-all"
+                    style={{
+                      width: `${Math.min(100, (profile.generation_count_month / (isPro ? 300 : 30)) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {isPro && profile?.stripe_customer_id && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/stripe/portal", { method: "POST" });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  } catch { /* ignore */ }
+                }}
+              >
+                サブスクリプション管理（Stripe）
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
         {/* ===== Section 1: API Tokens ===== */}
         <Card>
           <CardHeader>

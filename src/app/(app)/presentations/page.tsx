@@ -34,6 +34,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { TOOL_LABELS } from "@/lib/shared-constants";
+import { ProGate } from "@/components/shared/pro-gate";
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -639,17 +640,20 @@ export default function PresentationsPage() {
   // ─── Presentation Mode ───
   if (presenting) {
     return (
-      <PresentationMode
-        presentation={presenting}
-        onExit={() => setPresentingId(null)}
-      />
+      <ProGate feature="presentations" fallbackTitle="プレゼンテーション" fallbackDescription="プレゼンテーション機能はProプランでご利用いただけます。スライド作成・プレゼンが可能です。">
+        <PresentationMode
+          presentation={presenting}
+          onExit={() => setPresentingId(null)}
+        />
+      </ProGate>
     );
   }
 
   // ─── List View ───
   if (viewMode === "list") {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <ProGate feature="presentations" fallbackTitle="プレゼンテーション" fallbackDescription="プレゼンテーション機能はProプランでご利用いただけます。スライド作成・プレゼンが可能です。">
+        <div className="flex min-h-screen flex-col bg-background">
         <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
             <Link href="/">
@@ -776,6 +780,7 @@ export default function PresentationsPage() {
           )}
         </main>
       </div>
+      </ProGate>
     );
   }
 
@@ -783,16 +788,17 @@ export default function PresentationsPage() {
   if (!editing) return null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="一覧に戻る"
-            onClick={handleBackToList}
-          >
+    <ProGate feature="presentations" fallbackTitle="プレゼンテーション" fallbackDescription="プレゼンテーション機能はProプランでご利用いただけます。スライド作成・プレゼンが可能です。">
+      <div className="flex min-h-screen flex-col bg-background">
+        {/* Header */}
+        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="一覧に戻る"
+              onClick={handleBackToList}
+            >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2">
@@ -974,6 +980,7 @@ export default function PresentationsPage() {
           )}
         </div>
       </main>
-    </div>
+      </div>
+    </ProGate>
   );
 }

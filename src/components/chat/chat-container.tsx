@@ -22,6 +22,7 @@ import { useApprovalStore } from "@/stores/approval-store";
 import { useShallow } from "zustand/react/shallow";
 import { ApprovalDialog } from "./approval-dialog";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Keyboard, Bot, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 export function ChatContainer() {
+  const searchParams = useSearchParams();
   const userContext = useUserContextStore((s) => s.context);
   const trackAction = useUserContextStore((s) => s.trackAction);
   const onboardingCompleted = useOnboardingStore((s) => s.completed);
@@ -135,6 +137,22 @@ export function ChatContainer() {
   );
 
   useKeyboardShortcuts(shortcuts);
+
+  // Handle ?prompt= query parameter from templates/other pages
+  const promptHandled = useRef(false);
+  useEffect(() => {
+    const promptParam = searchParams.get("prompt");
+    if (promptParam && !promptHandled.current) {
+      promptHandled.current = true;
+      setInput(promptParam);
+      // Auto-send after a short delay to ensure everything is mounted
+      const timer = setTimeout(() => {
+        trackAction(promptParam.slice(0, 50));
+        sendMessage({ text: promptParam });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, sendMessage, trackAction]);
 
   const handleAgentEvent = useCallback(
     (event: AGUIEvent) => {

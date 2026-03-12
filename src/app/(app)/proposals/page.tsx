@@ -41,6 +41,7 @@ import {
   Pencil,
   X,
 } from "lucide-react";
+import { ProGate } from "@/components/shared/pro-gate";
 
 type ViewMode = "list" | "edit" | "preview";
 
@@ -803,39 +804,41 @@ export default function ProposalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Link href="/">
-            <Button variant="ghost" size="icon" aria-label="戻る">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <FileText className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">提案書 / 見積書</h1>
-        </div>
-      </header>
+    <ProGate feature="proposals" fallbackTitle="提案書・見積書" fallbackDescription="提案書・見積書はProプランでご利用いただけます。AI で提案書を自動生成できます。">
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
+            <Link href="/">
+              <Button variant="ghost" size="icon" aria-label="戻る">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <FileText className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold">提案書 / 見積書</h1>
+          </div>
+        </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6">
-        {mode === "list" && (
-          <ProposalList onEdit={handleEdit} onPreview={handlePreview} />
-        )}
-        {mode === "edit" && editing && (
-          <ProposalEditor initial={editing} onBack={handleBack} />
-        )}
-        {mode === "preview" && previewing && (
-          <ProposalPreview
-            proposal={
-              proposals.find((p) => p.id === previewing.id) ?? previewing
-            }
-            onBack={handleBack}
-            onEdit={() => {
-              const fresh = proposals.find((p) => p.id === previewing.id);
-              if (fresh) handleEdit(fresh);
-            }}
-          />
-        )}
-      </main>
-    </div>
+        <main className="mx-auto max-w-5xl px-4 py-6">
+          {mode === "list" && (
+            <ProposalList onEdit={handleEdit} onPreview={handlePreview} />
+          )}
+          {mode === "edit" && editing && (
+            <ProposalEditor initial={editing} onBack={handleBack} />
+          )}
+          {mode === "preview" && previewing && (
+            <ProposalPreview
+              proposal={
+                proposals.find((p) => p.id === previewing.id) ?? previewing
+              }
+              onBack={handleBack}
+              onEdit={() => {
+                const fresh = proposals.find((p) => p.id === previewing.id);
+                if (fresh) handleEdit(fresh);
+              }}
+            />
+          )}
+        </main>
+      </div>
+    </ProGate>
   );
 }

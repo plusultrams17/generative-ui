@@ -37,6 +37,7 @@ import {
   type FlowNode,
   type FlowNodeType,
 } from "@/stores/agent-builder-store";
+import { ProGate } from "@/components/shared/pro-gate";
 
 const NODE_TYPE_CONFIG: Record<
   FlowNodeType,
@@ -347,9 +348,10 @@ export default function AgentBuilderPage() {
   }, [activeFlow]);
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="flex h-14 items-center gap-3 border-b px-4">
+    <ProGate feature="agent-builder" fallbackTitle="エージェントビルダー" fallbackDescription="エージェントビルダーはProプランでご利用いただけます。カスタムAIエージェントを構築できます。">
+      <div className="flex h-screen flex-col bg-background">
+        {/* Header */}
+        <header className="flex h-14 items-center gap-3 border-b px-4">
         <Link href="/">
           <Button variant="ghost" size="icon-sm">
             <ArrowLeft className="size-4" />
@@ -791,6 +793,7 @@ export default function AgentBuilderPage() {
           </aside>
         )}
       </div>
-    </div>
+      </div>
+    </ProGate>
   );
 }

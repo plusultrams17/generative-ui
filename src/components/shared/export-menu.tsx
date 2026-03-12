@@ -9,6 +9,7 @@ import { generateProjectZip, slugify } from "@/lib/project-exporter";
 import { useShareStore } from "@/stores/share-store";
 import { DeployDialog } from "./deploy-dialog";
 import { GitHubDialog } from "./github-dialog";
+import { useAuthStore } from "@/stores/auth-store";
 
 type ExportMenuProps = {
   data: Record<string, unknown>;
@@ -21,6 +22,8 @@ export function ExportMenu({ data, componentType }: ExportMenuProps) {
   const [deployOpen, setDeployOpen] = useState(false);
   const [githubOpen, setGithubOpen] = useState(false);
   const addShare = useShareStore((s) => s.addShare);
+  const profile = useAuthStore((s) => s.profile);
+  const isPro = profile?.plan === "pro";
 
   function copyToClipboard(text: string, label: string) {
     navigator.clipboard.writeText(text);
@@ -98,25 +101,37 @@ export function ExportMenu({ data, componentType }: ExportMenuProps) {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border bg-popover p-1 shadow-lg">
             <button
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted"
+              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted ${!isPro ? "opacity-60" : ""}`}
               onClick={() => {
+                if (!isPro) {
+                  toast.info("VercelデプロイはProプランでご利用いただけます");
+                  setOpen(false);
+                  return;
+                }
                 setOpen(false);
                 setDeployOpen(true);
               }}
             >
               <Rocket className="h-3.5 w-3.5" />
               Vercelにデプロイ
+              {!isPro && <span className="ml-auto text-[10px] font-medium text-amber-500">Pro</span>}
             </button>
 
             <button
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted"
+              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted ${!isPro ? "opacity-60" : ""}`}
               onClick={() => {
+                if (!isPro) {
+                  toast.info("GitHub連携はProプランでご利用いただけます");
+                  setOpen(false);
+                  return;
+                }
                 setOpen(false);
                 setGithubOpen(true);
               }}
             >
               <GitBranch className="h-3.5 w-3.5" />
               GitHubにプッシュ
+              {!isPro && <span className="ml-auto text-[10px] font-medium text-amber-500">Pro</span>}
             </button>
 
             <div className="my-1 border-t" />

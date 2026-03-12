@@ -108,18 +108,18 @@ export function HeroSection() {
 
         {/* Sub copy */}
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg text-gray-600 dark:text-gray-400">
-          フォーム、テーブル、チャート、カスタムUI
-          &#8212;
-          自然言語で説明するだけで、プロ品質のUIコンポーネントを即座に生成
+          フォーム、テーブル、チャート、カスタムUI &#8212;
+          自然言語で説明するだけで、プロ品質のUIコンポーネントを即座に生成。
+          コーディング不要、デザイン知識不要。
         </p>
 
         {/* CTA buttons */}
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link
-            href="/chat"
+            href="/signup"
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.98]"
           >
-            今すぐ無料で始める
+            無料で始める
             <ArrowRight className="h-5 w-5" />
           </Link>
           <a
@@ -130,8 +130,15 @@ export function HeroSection() {
           </a>
         </div>
 
+        {/* Trust signals */}
+        <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-500">
+          無料プランあり · クレジットカード不要 · GPT-4o / Claude / Gemini 対応
+        </p>
+
         {/* Hero mockup */}
-        <TypingAnimation />
+        <div role="img" aria-label="AIチャットでUIを生成するデモアニメーション">
+          <TypingAnimation />
+        </div>
       </div>
     </section>
   );

@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 export function CtaSection() {
   return (
-    <section className="relative overflow-hidden py-20">
+    <section className="relative overflow-hidden py-20" aria-label="今すぐ始める">
       <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900" />
       <div
         className="absolute inset-0 -z-10 opacity-10"
@@ -22,13 +22,16 @@ export function CtaSection() {
         </p>
         <div className="mt-10">
           <Link
-            href="/chat"
+            href="/signup"
             className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-lg font-semibold text-blue-700 shadow-lg transition-all hover:bg-blue-50 hover:shadow-xl active:scale-[0.98]"
           >
             無料で始める
             <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
+        <p className="mt-4 text-sm text-blue-200">
+          無料プランあり · クレジットカード不要 · 30秒で開始
+        </p>
       </div>
     </section>
   );

@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TOOL_LABELS } from "@/lib/shared-constants";
+import { ProGate } from "@/components/shared/pro-gate";
 
 const TOOL_COLORS: Record<string, string> = {
   showForm: "bg-blue-500",
@@ -95,19 +96,20 @@ export default function ComposerPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
-          <Link href="/">
-            <Button variant="ghost" size="icon" aria-label="ホームに戻る">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">ページコンポーザー</h1>
-          </div>
+    <ProGate feature="composer" fallbackTitle="コンポーザー" fallbackDescription="コンポーザーはProプランでご利用いただけます。複数UIを組み合わせてページを作成できます。">
+      <div className="flex min-h-screen flex-col bg-background">
+        {/* Header */}
+        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
+            <Link href="/">
+              <Button variant="ghost" size="icon" aria-label="ホームに戻る">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              <h1 className="text-lg font-semibold">ページコンポーザー</h1>
+            </div>
           <Badge variant="secondary" className="text-xs">
             {items.length}件
           </Badge>
@@ -356,6 +358,7 @@ export default function ComposerPage() {
           )}
         </div>
       </main>
-    </div>
+      </div>
+    </ProGate>
   );
 }

@@ -43,6 +43,7 @@ import {
   type Orchestration,
   type OrchLog,
 } from "@/stores/orchestration-store";
+import { ProGate } from "@/components/shared/pro-gate";
 
 // --- Node Graph Component ---
 
@@ -473,9 +474,10 @@ export default function OrchestrationPage() {
   if (!mounted) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <header className="flex items-center gap-3 px-4 py-3 border-b bg-card shrink-0">
+    <ProGate feature="orchestration" fallbackTitle="オーケストレーション" fallbackDescription="オーケストレーションはProプランでご利用いただけます。複数AIを連携させたワークフローを構築できます。">
+      <div className="flex flex-col h-screen bg-background">
+        {/* Header */}
+        <header className="flex items-center gap-3 px-4 py-3 border-b bg-card shrink-0">
         <Link href="/">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="size-4" />
@@ -755,6 +757,7 @@ export default function OrchestrationPage() {
           </footer>
         </div>
       )}
-    </div>
+      </div>
+    </ProGate>
   );
 }

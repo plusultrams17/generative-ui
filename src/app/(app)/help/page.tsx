@@ -11,6 +11,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { FAQPageJsonLd } from "@/components/shared/json-ld";
 import {
   ArrowLeft,
   HelpCircle,
@@ -220,6 +221,12 @@ export default function HelpPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <FAQPageJsonLd
+        items={FAQ_ITEMS.map((item) => ({
+          question: item.q,
+          answer: item.a,
+        }))}
+      />
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="flex h-14 items-center gap-3 px-4">

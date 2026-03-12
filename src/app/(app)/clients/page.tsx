@@ -25,6 +25,7 @@ import {
   type Client,
   type ClientStatus,
 } from "@/stores/client-store";
+import { ProGate } from "@/components/shared/pro-gate";
 import {
   ArrowLeft,
   Building2,
@@ -329,6 +330,7 @@ export default function ClientsPage() {
   }
 
   return (
+    <ProGate feature="clients" fallbackTitle="クライアント管理" fallbackDescription="クライアント管理はProプランでご利用いただけます。顧客情報の一元管理、ステータス追跡が可能です。">
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
@@ -496,5 +498,6 @@ export default function ClientsPage() {
 
       <AddClientDialog open={showDialog} onClose={() => setShowDialog(false)} />
     </div>
+    </ProGate>
   );
 }

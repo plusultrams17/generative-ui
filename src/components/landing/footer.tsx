@@ -7,31 +7,31 @@ const footerLinks = {
     links: [
       { label: "チャット", href: "/chat" },
       { label: "ギャラリー", href: "/gallery" },
-      { label: "テンプレート", href: "/chat" },
-      { label: "マーケットプレイス", href: "/gallery" },
+      { label: "テンプレート", href: "/templates" },
+      { label: "マーケットプレイス", href: "/marketplace" },
     ],
   },
   tools: {
     title: "ツール",
     links: [
       { label: "コンポーザー", href: "/composer" },
-      { label: "エージェントビルダー", href: "/chat" },
-      { label: "オーケストレーション", href: "/chat" },
+      { label: "エージェントビルダー", href: "/agent-builder" },
+      { label: "オーケストレーション", href: "/orchestration" },
     ],
   },
   resources: {
     title: "リソース",
     links: [
-      { label: "ヘルプ", href: "/settings" },
+      { label: "ヘルプ", href: "/help" },
       { label: "設定", href: "/settings" },
-      { label: "統計", href: "/chat" },
+      { label: "統計", href: "/stats" },
     ],
   },
   legal: {
     title: "その他",
     links: [
-      { label: "利用規約", href: "#" },
-      { label: "プライバシーポリシー", href: "#" },
+      { label: "利用規約", href: "/help" },
+      { label: "プライバシーポリシー", href: "/help" },
     ],
   },
 };
@@ -51,32 +51,34 @@ export function Footer() {
         </div>
 
         {/* Links grid */}
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-          {Object.values(footerLinks).map((section) => (
-            <div key={section.title}>
-              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {section.title}
-              </h3>
-              <ul className="space-y-2">
-                {section.links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+        <nav aria-label="フッターナビゲーション">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+            {Object.values(footerLinks).map((section) => (
+              <div key={section.title}>
+                <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                  {section.title}
+                </h3>
+                <ul className="space-y-2">
+                  {section.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </nav>
 
         {/* Copyright */}
         <div className="mt-10 border-t border-gray-200 pt-6 dark:border-gray-800">
           <p className="text-center text-sm text-gray-500 dark:text-gray-500">
-            &copy; 2024 生成UI. All rights reserved.
+            &copy; 2026 生成UI. All rights reserved.
           </p>
         </div>
       </div>

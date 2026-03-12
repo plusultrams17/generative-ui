@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -233,6 +234,7 @@ function PublishModal({
 }
 
 export default function MarketplacePage() {
+  const router = useRouter();
   const items = useMarketplaceStore((s) => s.items);
   const toggleLike = useMarketplaceStore((s) => s.toggleLike);
   const likedIds = useMarketplaceStore((s) => s.likedIds);
@@ -268,10 +270,10 @@ export default function MarketplacePage() {
     setTimeout(() => setCopiedId(null), 2000);
   }
 
-  async function handleImport(item: MarketplaceItem) {
-    await navigator.clipboard.writeText(item.code);
+  function handleImport(item: MarketplaceItem) {
     incrementDownload(item.id);
-    toast.success(`「${item.title}」をインポートしました`);
+    const prompt = `「${item.title}」のUIを生成してください。${item.description}`;
+    router.push(`/chat?prompt=${encodeURIComponent(prompt)}`);
   }
 
   return (
@@ -437,7 +439,7 @@ export default function MarketplacePage() {
                       onClick={() => handleImport(item)}
                     >
                       <Download className="h-3 w-3" />
-                      インポート
+                      チャットで使う
                     </Button>
                   </div>
                 </CardContent>

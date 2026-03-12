@@ -38,6 +38,7 @@ import { useBrandingStore } from "@/stores/branding-store";
 import Link from "next/link";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { ProGate } from "@/components/shared/pro-gate";
 
 const STATUS_CONFIG: {
   key: ProjectStatus;
@@ -696,232 +697,234 @@ export default function ProjectsPage() {
   }, [projects]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
-          <Link href="/">
-            <Button variant="ghost" size="icon" aria-label="チャットに戻る">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">プロジェクト管理</h1>
-          </div>
-          <span className="text-sm text-muted-foreground">
-            {filtered.length}件
-          </span>
-          <div className="flex-1" />
+    <ProGate feature="projects" fallbackTitle="プロジェクト管理" fallbackDescription="プロジェクト管理はProプランでご利用いただけます。案件の進捗管理が可能です。">
+      <div className="flex min-h-screen flex-col bg-background">
+        {/* Header */}
+        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
+            <Link href="/">
+              <Button variant="ghost" size="icon" aria-label="チャットに戻る">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div className="flex items-center gap-2">
+              <FolderOpen className="h-5 w-5 text-primary" />
+              <h1 className="text-lg font-semibold">プロジェクト管理</h1>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {filtered.length}件
+            </span>
+            <div className="flex-1" />
 
-          {/* View toggle */}
-          <div className="flex items-center rounded-md border">
-            <Button
-              variant={viewMode === "kanban" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-r-none gap-1.5"
-              onClick={() => setViewMode("kanban")}
-            >
-              <Kanban className="h-3.5 w-3.5" />
-              カンバン
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-l-none gap-1.5"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-3.5 w-3.5" />
-              リスト
-            </Button>
-          </div>
-
-          <Button
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            新規作成
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="mx-auto max-w-7xl space-y-3 px-4 pb-3 sm:px-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="案件名・概要・クライアントで検索..."
-                className="pl-9"
-              />
+            {/* View toggle */}
+            <div className="flex items-center rounded-md border">
+              <Button
+                variant={viewMode === "kanban" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-r-none gap-1.5"
+                onClick={() => setViewMode("kanban")}
+              >
+                <Kanban className="h-3.5 w-3.5" />
+                カンバン
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-l-none gap-1.5"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-3.5 w-3.5" />
+                リスト
+              </Button>
             </div>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="ステータス" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全てのステータス</SelectItem>
-                {STATUS_CONFIG.map((s) => (
-                  <SelectItem key={s.key} value={s.key}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={clientFilter} onValueChange={setClientFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="クライアント" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全てのクライアント</SelectItem>
-                {clientIds.map((cid) => (
-                  <SelectItem key={cid} value={cid}>
-                    {getClientName(clients, cid)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
-        {projects.length === 0 ? (
-          // Empty state
-          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <FolderOpen className="h-12 w-12 text-muted-foreground/30" />
-            <p className="text-lg font-medium text-muted-foreground">
-              プロジェクトがありません
-            </p>
-            <p className="text-sm text-muted-foreground">
-              新規作成ボタンからプロジェクトを追加してください
-            </p>
             <Button
-              variant="outline"
-              className="mt-2 gap-1.5"
+              size="sm"
+              className="gap-1.5"
               onClick={() => setShowCreateModal(true)}
             >
               <Plus className="h-3.5 w-3.5" />
-              最初のプロジェクトを作成
+              新規作成
             </Button>
           </div>
-        ) : filtered.length === 0 ? (
-          // No results
-          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <Search className="h-12 w-12 text-muted-foreground/30" />
-            <p className="text-lg font-medium text-muted-foreground">
-              検索結果がありません
-            </p>
-            <p className="text-sm text-muted-foreground">
-              フィルターや検索条件を変更してください
-            </p>
-          </div>
-        ) : viewMode === "kanban" ? (
-          // Kanban view
-          <div className="overflow-x-auto pb-4">
-            <div className="flex gap-4 min-w-max">
-              {STATUS_CONFIG.map((col, colIdx) => {
-                const items = grouped[col.key];
-                return (
-                  <div
-                    key={col.key}
-                    className={`w-64 shrink-0 rounded-lg border ${col.borderColor} ${col.bgColor} p-3`}
-                  >
-                    {/* Column header */}
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className={`text-sm font-semibold ${col.color}`}>
-                        {col.label}
-                      </h3>
-                      <Badge
-                        variant="secondary"
-                        className={`text-[10px] ${col.color}`}
-                      >
-                        {items.length}
-                      </Badge>
-                    </div>
 
-                    {/* Cards */}
-                    <div className="space-y-2">
-                      {items.map((project) => (
-                        <KanbanCard
-                          key={project.id}
-                          project={project}
-                          clientName={getClientName(clients, project.clientId)}
-                          isFirst={colIdx === 0}
-                          isLast={colIdx === STATUS_CONFIG.length - 1}
-                          onBrandingClick={() => setBrandingTarget({ id: project.id, name: project.name })}
-                        />
-                      ))}
-                      {items.length === 0 && (
-                        <p className="py-4 text-center text-xs text-muted-foreground">
-                          案件なし
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+          {/* Filters */}
+          <div className="mx-auto max-w-7xl space-y-3 px-4 pb-3 sm:px-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="案件名・概要・クライアントで検索..."
+                  className="pl-9"
+                />
+              </div>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="ステータス" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全てのステータス</SelectItem>
+                  {STATUS_CONFIG.map((s) => (
+                    <SelectItem key={s.key} value={s.key}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={clientFilter} onValueChange={setClientFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="クライアント" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全てのクライアント</SelectItem>
+                  {clientIds.map((cid) => (
+                    <SelectItem key={cid} value={cid}>
+                      {getClientName(clients, cid)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        ) : (
-          // List/table view
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium">案件名</th>
-                  <th className="px-4 py-3 text-left font-medium">
-                    クライアント
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium">
-                    ステータス
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium">期限</th>
-                  <th className="px-4 py-3 text-left font-medium">予算</th>
-                  <th className="px-4 py-3 text-left font-medium">作成日</th>
-                  <th className="px-4 py-3 text-right font-medium">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((project) => {
-                  const isOverdue =
-                    project.deadline &&
-                    project.deadline < Date.now() &&
-                    project.status !== "delivered" &&
-                    project.status !== "archived";
-                  const colIdx = STATUS_CONFIG.findIndex(
-                    (s) => s.key === project.status
-                  );
+        </header>
+
+        {/* Main content */}
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+          {projects.length === 0 ? (
+            // Empty state
+            <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+              <FolderOpen className="h-12 w-12 text-muted-foreground/30" />
+              <p className="text-lg font-medium text-muted-foreground">
+                プロジェクトがありません
+              </p>
+              <p className="text-sm text-muted-foreground">
+                新規作成ボタンからプロジェクトを追加してください
+              </p>
+              <Button
+                variant="outline"
+                className="mt-2 gap-1.5"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                最初のプロジェクトを作成
+              </Button>
+            </div>
+          ) : filtered.length === 0 ? (
+            // No results
+            <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+              <Search className="h-12 w-12 text-muted-foreground/30" />
+              <p className="text-lg font-medium text-muted-foreground">
+                検索結果がありません
+              </p>
+              <p className="text-sm text-muted-foreground">
+                フィルターや検索条件を変更してください
+              </p>
+            </div>
+          ) : viewMode === "kanban" ? (
+            // Kanban view
+            <div className="overflow-x-auto pb-4">
+              <div className="flex gap-4 min-w-max">
+                {STATUS_CONFIG.map((col, colIdx) => {
+                  const items = grouped[col.key];
                   return (
-                    <TableRow
-                      key={project.id}
-                      project={project}
-                      clientName={getClientName(clients, project.clientId)}
-                      isOverdue={!!isOverdue}
-                      isFirst={colIdx === 0}
-                      isLast={colIdx === STATUS_CONFIG.length - 1}
-                    />
+                    <div
+                      key={col.key}
+                      className={`w-64 shrink-0 rounded-lg border ${col.borderColor} ${col.bgColor} p-3`}
+                    >
+                      {/* Column header */}
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className={`text-sm font-semibold ${col.color}`}>
+                          {col.label}
+                        </h3>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] ${col.color}`}
+                        >
+                          {items.length}
+                        </Badge>
+                      </div>
+
+                      {/* Cards */}
+                      <div className="space-y-2">
+                        {items.map((project) => (
+                          <KanbanCard
+                            key={project.id}
+                            project={project}
+                            clientName={getClientName(clients, project.clientId)}
+                            isFirst={colIdx === 0}
+                            isLast={colIdx === STATUS_CONFIG.length - 1}
+                            onBrandingClick={() => setBrandingTarget({ id: project.id, name: project.name })}
+                          />
+                        ))}
+                        {items.length === 0 && (
+                          <p className="py-4 text-center text-xs text-muted-foreground">
+                            案件なし
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </main>
+              </div>
+            </div>
+          ) : (
+            // List/table view
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-3 text-left font-medium">案件名</th>
+                    <th className="px-4 py-3 text-left font-medium">
+                      クライアント
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium">
+                      ステータス
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium">期限</th>
+                    <th className="px-4 py-3 text-left font-medium">予算</th>
+                    <th className="px-4 py-3 text-left font-medium">作成日</th>
+                    <th className="px-4 py-3 text-right font-medium">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((project) => {
+                    const isOverdue =
+                      project.deadline &&
+                      project.deadline < Date.now() &&
+                      project.status !== "delivered" &&
+                      project.status !== "archived";
+                    const colIdx = STATUS_CONFIG.findIndex(
+                      (s) => s.key === project.status
+                    );
+                    return (
+                      <TableRow
+                        key={project.id}
+                        project={project}
+                        clientName={getClientName(clients, project.clientId)}
+                        isOverdue={!!isOverdue}
+                        isFirst={colIdx === 0}
+                        isLast={colIdx === STATUS_CONFIG.length - 1}
+                      />
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </main>
 
-      {/* Create modal */}
-      <CreateProjectModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        clients={clients}
-      />
-    </div>
+        {/* Create modal */}
+        <CreateProjectModal
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          clients={clients}
+        />
+      </div>
+    </ProGate>
   );
 }
 

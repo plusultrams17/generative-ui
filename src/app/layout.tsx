@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { JsonLd } from "@/components/shared/json-ld";
+import { JsonLd, OrganizationJsonLd, WebSiteJsonLd } from "@/components/shared/json-ld";
 import { SITE_CONFIG, PAGE_METADATA } from "@/lib/seo-config";
 import "./globals.css";
 
@@ -26,6 +26,9 @@ export const metadata: Metadata = {
   authors: [{ name: SITE_CONFIG.creator }],
   creator: SITE_CONFIG.creator,
   manifest: "/manifest.json",
+  alternates: {
+    canonical: SITE_CONFIG.url,
+  },
   openGraph: {
     type: "website",
     locale: SITE_CONFIG.locale,
@@ -75,6 +78,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <JsonLd />
+        <OrganizationJsonLd />
+        <WebSiteJsonLd />
         <Providers>{children}</Providers>
       </body>
     </html>
