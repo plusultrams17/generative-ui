@@ -25,7 +25,7 @@ export function CtaSection() {
             href="/signup"
             className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-lg font-semibold text-blue-700 shadow-lg transition-all hover:bg-blue-50 hover:shadow-xl active:scale-[0.98]"
           >
-            無料で始める
+            30秒でUIを生成する
             <ArrowRight className="h-5 w-5" />
           </Link>
         </div>

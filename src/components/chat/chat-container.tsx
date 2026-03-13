@@ -6,12 +6,10 @@ import { MessageList } from "./message-list";
 import { AgentMessageList } from "./agent-message-list";
 import { ChatInput, type ChatInputHandle } from "./chat-input";
 import { ModelSelector } from "./model-selector";
+import { QuotaBadge } from "./quota-badge";
 import { StyleSelector, type DesignStyle } from "./style-selector";
 import { TemplateDrawer } from "./template-drawer";
 import { HistoryPanel } from "./history-panel";
-import { ShortcutsModal } from "@/components/shared/shortcuts-modal";
-import { AgentPanel } from "@/components/shared/agent-panel";
-import { OnboardingTour } from "@/components/shared/onboarding-tour";
 import { InstallPrompt } from "@/components/shared/install-prompt";
 import { useKeyboardShortcuts, type ShortcutDefinition } from "@/hooks/use-keyboard-shortcuts";
 import { useUserContextStore } from "@/stores/user-context-store";
@@ -22,11 +20,20 @@ import { DEFAULT_MODEL_ID } from "@/lib/models";
 import { useApprovalStore } from "@/stores/approval-store";
 import { useShallow } from "zustand/react/shallow";
 import { ApprovalDialog } from "./approval-dialog";
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useUpgradeStore } from "@/stores/upgrade-store";
+import { useAuthStore } from "@/stores/auth-store";
+import { useState, useMemo, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { Keyboard, Bot, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+/* ─── Lazy-loaded heavy modals (reduce initial bundle) ─── */
+const ShortcutsModal = lazy(() => import("@/components/shared/shortcuts-modal").then(m => ({ default: m.ShortcutsModal })));
+const AgentPanel = lazy(() => import("@/components/shared/agent-panel").then(m => ({ default: m.AgentPanel })));
+const OnboardingTour = lazy(() => import("@/components/shared/onboarding-tour").then(m => ({ default: m.OnboardingTour })));
+const UpgradeModal = lazy(() => import("@/components/shared/upgrade-modal").then(m => ({ default: m.UpgradeModal })));
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -39,9 +46,12 @@ function fileToDataUrl(file: File): Promise<string> {
 
 export function ChatContainer() {
   const searchParams = useSearchParams();
-  const userContext = useUserContextStore((s) => s.context);
-  const trackAction = useUserContextStore((s) => s.trackAction);
-  const onboardingCompleted = useOnboardingStore((s) => s.completed);
+  const { context: userContext, trackAction } = useUserContextStore(
+    useShallow((s) => ({ context: s.context, trackAction: s.trackAction }))
+  );
+  const { completed: onboardingCompleted, firstGenerationDone, markFirstGeneration } = useOnboardingStore(
+    useShallow((s) => ({ completed: s.completed, firstGenerationDone: s.firstGenerationDone, markFirstGeneration: s.markFirstGeneration }))
+  );
   const contextRef = useRef(userContext);
   contextRef.current = userContext;
 
@@ -67,10 +77,18 @@ export function ChatContainer() {
     []
   );
 
+  const openUpgrade = useUpgradeStore((s) => s.openUpgrade);
+  const profile = useAuthStore((s) => s.profile);
+  const fetchProfile = useAuthStore((s) => s.fetchProfile);
+
   const { messages, sendMessage, status, error } = useChat({
     transport,
     onError: (err) => {
       console.error("[useChat error]", err);
+      const msg = err?.message ?? "";
+      if (msg.includes("429") || msg.includes("上限") || msg.includes("quota") || msg.includes("rate limit") || msg.includes("生成回数")) {
+        openUpgrade("quota_exhausted", { attemptedPrompt: input });
+      }
     },
   });
   const [input, setInput] = useState("");
@@ -115,6 +133,50 @@ export function ChatContainer() {
 
   const isLoading = status === "streaming" || status === "submitted";
   const isAgentLoading = agentSending;
+
+  // Post-generation: congrats toast + milestone-based upgrade nudge
+  const prevLoadingRef = useRef(false);
+  useEffect(() => {
+    if (prevLoadingRef.current && !isLoading) {
+      const hasAssistant = messages.some((m) => m.role === "assistant");
+      if (!hasAssistant) {
+        prevLoadingRef.current = isLoading;
+        return;
+      }
+
+      // First generation congratulations
+      if (!firstGenerationDone) {
+        markFirstGeneration();
+        toast.success("おめでとう！最初のUIが完成しました あと29回無料で生成できます", {
+          duration: 6000,
+        });
+      }
+
+      // Refresh profile to get latest usage count, then check milestones
+      fetchProfile().then(() => {
+        const p = useAuthStore.getState().profile;
+        if (!p || p.plan === "pro") return;
+        const used = p.generation_count_month ?? 0;
+        const limit = 30;
+        const remaining = Math.max(0, limit - used);
+        const ratio = used / limit;
+
+        if (ratio >= 1) {
+          // Exhausted — will be caught by 429 handler on next attempt
+        } else if (ratio >= 0.9) {
+          // 90%+ : show upgrade modal (soft nudge)
+          openUpgrade("quota_warning", { remaining, limit, used });
+        } else if (used === 20) {
+          // Exactly 20/30: toast reminder
+          toast("残り10回になりました。Proなら月300回使えます", {
+            action: { label: "詳しく", onClick: () => openUpgrade("quota_warning", { remaining, limit, used }) },
+            duration: 5000,
+          });
+        }
+      });
+    }
+    prevLoadingRef.current = isLoading;
+  }, [isLoading, messages, firstGenerationDone, markFirstGeneration, fetchProfile, openUpgrade]);
 
   const shortcuts: ShortcutDefinition[] = useMemo(
     () => [
@@ -439,6 +501,7 @@ export function ChatContainer() {
           <ModelSelector selectedModelId={modelId} onModelChange={setModelId} />
           <StyleSelector selectedStyle={designStyle} onStyleChange={setDesignStyle} />
           <HistoryPanel onReuse={handlePromptSend} />
+          <QuotaBadge />
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -502,6 +565,14 @@ export function ChatContainer() {
       {error && !agentMode && (
         <div className="border-b bg-destructive/10 px-6 py-2 text-sm text-destructive">
           エラーが発生しました: {error.message}
+          {(error.message?.includes("429") || error.message?.includes("上限") || error.message?.includes("生成回数")) && (
+            <button
+              onClick={() => openUpgrade("quota_exhausted")}
+              className="ml-2 underline hover:no-underline"
+            >
+              プランを確認
+            </button>
+          )}
         </div>
       )}
 
@@ -533,21 +604,26 @@ export function ChatContainer() {
         />
       </div>
 
-      <ShortcutsModal
-        open={shortcutsOpen}
-        onClose={() => setShortcutsOpen(false)}
-      />
-
-      <AgentPanel open={agentPanelOpen} onClose={() => setAgentPanelOpen(false)} />
-
-      {pendingApproval && (
-        <ApprovalDialog
-          request={pendingApproval}
-          onResolved={handleApprovalResolved}
-        />
-      )}
-
-      {!onboardingCompleted && <OnboardingTour />}
+      {/* Lazy-loaded modals — only downloaded when needed */}
+      <Suspense fallback={null}>
+        {shortcutsOpen && (
+          <ShortcutsModal
+            open={shortcutsOpen}
+            onClose={() => setShortcutsOpen(false)}
+          />
+        )}
+        {agentPanelOpen && (
+          <AgentPanel open={agentPanelOpen} onClose={() => setAgentPanelOpen(false)} />
+        )}
+        {pendingApproval && (
+          <ApprovalDialog
+            request={pendingApproval}
+            onResolved={handleApprovalResolved}
+          />
+        )}
+        {!onboardingCompleted && <OnboardingTour />}
+        <UpgradeModal />
+      </Suspense>
     </div>
   );
 }

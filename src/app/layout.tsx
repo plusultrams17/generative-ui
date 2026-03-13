@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/providers";
 import { JsonLd, OrganizationJsonLd, WebSiteJsonLd } from "@/components/shared/json-ld";
 import { SITE_CONFIG, PAGE_METADATA } from "@/lib/seo-config";
@@ -81,6 +83,8 @@ export default function RootLayout({
         <OrganizationJsonLd />
         <WebSiteJsonLd />
         <Providers>{children}</Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

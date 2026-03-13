@@ -8,7 +8,7 @@ function getStripe() {
   });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const {
@@ -17,6 +17,17 @@ export async function POST() {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Parse billing period from request body
+    let billingPeriod: "monthly" | "annual" = "monthly";
+    try {
+      const body = await request.json();
+      if (body.billingPeriod === "annual") {
+        billingPeriod = "annual";
+      }
+    } catch {
+      // Default to monthly if no body
     }
 
     const stripe = getStripe();
@@ -43,18 +54,25 @@ export async function POST() {
         .eq("id", user.id);
     }
 
+    // Select price based on billing period
+    const priceId =
+      billingPeriod === "annual"
+        ? process.env.STRIPE_PRO_ANNUAL_PRICE_ID || process.env.STRIPE_PRO_PRICE_ID!
+        : process.env.STRIPE_PRO_PRICE_ID!;
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
       line_items: [
         {
-          price: process.env.STRIPE_PRO_PRICE_ID!,
+          price: priceId,
           quantity: 1,
         },
       ],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/settings?payment=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/pricing`,
       metadata: { supabase_user_id: user.id },
+      allow_promotion_codes: true,
     });
 
     return NextResponse.json({ url: session.url });

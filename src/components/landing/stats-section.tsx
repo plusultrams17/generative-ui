@@ -10,9 +10,9 @@ type Stat = {
 };
 
 const stats: Stat[] = [
-  { value: "4+", numericValue: 4, suffix: "+", label: "AIモデル対応" },
-  { value: "8+", numericValue: 8, suffix: "+", label: "テンプレート" },
-  { value: "4種", numericValue: 4, suffix: "種", label: "UI生成タイプ" },
+  { value: "30秒", numericValue: 30, suffix: "秒", label: "で完成" },
+  { value: "0円", numericValue: 0, suffix: "円", label: "で始められる" },
+  { value: "3+", numericValue: 3, suffix: "+", label: "AIモデル対応" },
   { value: "∞", numericValue: null, suffix: "", label: "カスタマイズ可能" },
 ];
 

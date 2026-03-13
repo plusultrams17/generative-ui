@@ -19,20 +19,16 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser();
 
       if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (!profile) {
-          await supabase.from("profiles").insert({
+        // Use upsert to avoid race condition with auth trigger
+        await supabase.from("profiles").upsert(
+          {
             id: user.id,
             email: user.email || "",
             display_name:
               user.user_metadata?.display_name || user.email?.split("@")[0] || "User",
-          });
-        }
+          },
+          { onConflict: "id", ignoreDuplicates: true }
+        );
       }
 
       return NextResponse.redirect(`${origin}${redirect}`);

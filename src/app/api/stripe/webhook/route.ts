@@ -53,28 +53,43 @@ export async function POST(request: Request) {
             ? session.customer
             : session.customer?.id ?? null;
 
-        if (userId && subscriptionId) {
-          const { error } = await supabase
-            .from("profiles")
-            .update({
-              plan: "pro",
-              stripe_subscription_id: subscriptionId,
-              stripe_customer_id: customerId,
-            })
-            .eq("id", userId);
+        if (!subscriptionId) {
+          console.error("[webhook] checkout.session.completed missing subscriptionId");
+          return NextResponse.json({ error: "Missing subscriptionId" }, { status: 400 });
+        }
 
-          if (error) {
-            console.error("[webhook] Failed to update profile:", error);
-            return NextResponse.json(
-              { error: "Database update failed" },
-              { status: 500 }
-            );
-          }
-        } else {
-          console.warn("[webhook] checkout.session.completed missing userId or subscriptionId", {
+        // Try metadata first, then fall back to customer lookup
+        let targetUserId = userId;
+        if (!targetUserId && customerId) {
+          const { data: existingProfile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("stripe_customer_id", customerId)
+            .maybeSingle();
+          targetUserId = existingProfile?.id ?? null;
+        }
+
+        if (!targetUserId) {
+          console.error("[webhook] Cannot find user for checkout session", {
             userId,
-            subscriptionId,
+            customerId,
+            sessionId: session.id,
           });
+          return NextResponse.json({ error: "User not found" }, { status: 400 });
+        }
+
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            plan: "pro",
+            stripe_subscription_id: subscriptionId,
+            stripe_customer_id: customerId,
+          })
+          .eq("id", targetUserId);
+
+        if (error) {
+          console.error("[webhook] Failed to update profile:", error);
+          return NextResponse.json({ error: "Database update failed" }, { status: 500 });
         }
         break;
       }

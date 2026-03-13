@@ -17,11 +17,20 @@ export function JsonLd({ type = "WebApplication", name, description, url }: Json
         url: url || SITE_CONFIG.url,
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Web",
-        offers: {
-          "@type": "Offer",
-          price: "0",
-          priceCurrency: "JPY",
-        },
+        offers: [
+          {
+            "@type": "Offer",
+            name: "Free",
+            price: "0",
+            priceCurrency: "JPY",
+          },
+          {
+            "@type": "Offer",
+            name: "Pro",
+            price: "3980",
+            priceCurrency: "JPY",
+          },
+        ],
         featureList: [
           "AIによるUI自動生成",
           "フォーム、テーブル、チャート生成",
@@ -82,6 +91,28 @@ export function WebSiteJsonLd() {
       },
       "query-input": "required name=search_term_string",
     },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
+type BreadcrumbItem = { name: string; url: string };
+
+export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
   };
 
   return (

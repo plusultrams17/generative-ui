@@ -28,10 +28,11 @@ const footerLinks = {
     ],
   },
   legal: {
-    title: "その他",
+    title: "法的情報",
     links: [
-      { label: "利用規約", href: "/help" },
-      { label: "プライバシーポリシー", href: "/help" },
+      { label: "利用規約", href: "/terms" },
+      { label: "プライバシーポリシー", href: "/privacy" },
+      { label: "特定商取引法に基づく表記", href: "/tokushoho" },
     ],
   },
 };

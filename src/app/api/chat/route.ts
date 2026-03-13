@@ -7,9 +7,14 @@ import { buildSystemPrompt } from "@/ai/prompts/system";
 import { AVAILABLE_MODELS } from "@/lib/models";
 import { createClient } from "@/lib/supabase/server";
 import { checkQuota, incrementUsage } from "@/lib/quota";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import type { UserContext } from "@/types/context";
 
 const FREE_MODEL_ID = "gpt-4o-mini";
+
+// Rate limit: 20 requests per minute per IP
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 60 * 1000;
 
 function getModel(modelId?: string) {
   const config = AVAILABLE_MODELS.find((m) => m.id === modelId);
@@ -27,6 +32,24 @@ function getModel(modelId?: string) {
 
 export async function POST(request: Request) {
   try {
+    // Rate limit check
+    const clientIP = getClientIP(request);
+    const rateResult = checkRateLimit(clientIP, RATE_LIMIT, RATE_WINDOW_MS);
+    if (!rateResult.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: "リクエストが多すぎます。しばらくしてから再度お試しください。",
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(Math.ceil(rateResult.retryAfterMs / 1000)),
+          },
+        }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -73,16 +96,19 @@ export async function POST(request: Request) {
     // Free users can only use gpt-4o-mini
     const effectiveModelId = quota.plan === "free" ? FREE_MODEL_ID : (modelId || FREE_MODEL_ID);
 
+    // Increment usage BEFORE streaming to prevent race conditions
+    // (multiple rapid requests bypassing daily limits)
+    try {
+      await incrementUsage(user.id, effectiveModelId);
+    } catch (err) {
+      console.error("[chat] Failed to increment usage:", err);
+    }
+
     const result = streamText({
       model: getModel(effectiveModelId),
       system: buildSystemPrompt(userContext, designStyle),
       messages: await convertToModelMessages(messages),
       tools,
-    });
-
-    // Increment usage in background
-    incrementUsage(user.id, effectiveModelId).catch(() => {
-      // Ignore errors from usage tracking
     });
 
     return result.toUIMessageStreamResponse();

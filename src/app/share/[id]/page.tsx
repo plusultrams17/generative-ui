@@ -223,8 +223,39 @@ export default function SharePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const share = useShareStore((s) => s.getShare(id));
+  const localShare = useShareStore((s) => s.getShare(id));
+  const fetchShare = useShareStore((s) => s.fetchShare);
+  const [serverShare, setServerShare] = useState<{
+    id: string;
+    toolName: string;
+    toolData: Record<string, unknown>;
+    createdAt: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(!localShare);
   const approvalStatus = useFeedbackStore((s) => s.getApprovalStatus(id));
+
+  // Fetch from server if not found locally
+  useEffect(() => {
+    if (!localShare) {
+      fetchShare(id).then((result) => {
+        setServerShare(result);
+        setLoading(false);
+      });
+    }
+  }, [id, localShare, fetchShare]);
+
+  const share = localShare || serverShare;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -271,6 +302,22 @@ export default function SharePage({
                 {new Date(share.createdAt).toLocaleString("ja-JP")} に作成
               </p>
             </div>
+
+            <div className="mt-6 flex flex-col items-center gap-4">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <Sparkles className="h-3 w-3 text-primary" />
+                Powered by 生成UI
+              </Link>
+              <Button asChild size="lg">
+                <Link href="/signup">
+                  このUIを自分でカスタマイズする（無料）
+                </Link>
+              </Button>
+            </div>
+
             <FeedbackPanel shareId={id} />
           </>
         ) : (
